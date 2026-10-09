@@ -27,6 +27,8 @@ const TIME_OPTIONS = Array.from({ length: 24 * 2 }, (_, i) => {
   return `${displayHour}:${min} ${ampm}`;
 });
 
+const END_TIME_OPTIONS = [...TIME_OPTIONS, '11:59 PM'];
+
 const CustomToggle = ({
   active,
   onPress,
@@ -378,29 +380,31 @@ const NotificationScreen = ({ navigation }: any) => {
       />
 
       <AppBottomSheet ref={bottomSheetRef} snapPoints={['50%']}>
-        {TIME_OPTIONS.map(item => (
-          <TouchableOpacity
-            key={item}
-            style={styles.timeOption}
-            onPress={() => selectTime(item)}
-          >
-            <AppText
-              style={[
-                styles.timeOptionText,
-                (selectingFor === 'startTime'
-                  ? prefs.startTime
-                  : prefs.endTime) === item && styles.timeOptionTextActive,
-              ]}
+        {(selectingFor === 'endTime' ? END_TIME_OPTIONS : TIME_OPTIONS).map(
+          item => (
+            <TouchableOpacity
+              key={item}
+              style={styles.timeOption}
+              onPress={() => selectTime(item)}
             >
-              {item}
-            </AppText>
-            {(selectingFor === 'startTime'
-              ? prefs.startTime
-              : prefs.endTime) === item && (
-              <Ionicons name="checkmark" size={20} color={colors.primary} />
-            )}
-          </TouchableOpacity>
-        ))}
+              <AppText
+                style={[
+                  styles.timeOptionText,
+                  (selectingFor === 'startTime'
+                    ? prefs.startTime
+                    : prefs.endTime) === item && styles.timeOptionTextActive,
+                ]}
+              >
+                {item}
+              </AppText>
+              {(selectingFor === 'startTime'
+                ? prefs.startTime
+                : prefs.endTime) === item && (
+                <Ionicons name="checkmark" size={20} color={colors.primary} />
+              )}
+            </TouchableOpacity>
+          ),
+        )}
       </AppBottomSheet>
     </Container>
   );
