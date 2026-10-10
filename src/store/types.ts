@@ -228,6 +228,8 @@ interface DmsChatAction {
     newMessage?: any;
     data?: any[];
     page?: number;
+    preserveHistory?: boolean;
+    roomId?: string;
   };
 }
 
