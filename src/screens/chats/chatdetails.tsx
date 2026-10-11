@@ -6,8 +6,6 @@ import {
   TouchableOpacity,
   Keyboard,
   ActivityIndicator,
-  Platform,
-  StyleSheet,
 } from 'react-native';
 import { AppText } from '@/components/ui/text';
 import Container from '@/components/layout/container';
@@ -44,8 +42,6 @@ import { buildMessageHtml, getPlainMessageText } from '@/utils/message-text';
 import { createChatDetailStyles } from '@/theme/createScreenStyles';
 import ChatBackground from '@/components/layout/chat/chat-background';
 import { useMessageDraft } from '@/hooks/useMessageDraft';
-import { useJumpToLatest } from '@/hooks/useJumpToLatest';
-import { AppButton } from '@/components/ui/button';
 
 const ChatDetailScreen = ({ navigation }: any) => {
   const { colors } = useTheme();
@@ -87,44 +83,9 @@ const ChatDetailScreen = ({ navigation }: any) => {
   const participants = Array.isArray(participant) ? participant : [];
   const headerParticipant =
     participants.find(p => p.user_id !== user?.user_id) || participants[0];
-  const isAndroid = Platform.OS === 'android';
-  const { loadMore, isFetchingMore, isInitialLoading, isConversationReady } =
-    UseChatDetails({
-      channel_id: channel_id || '',
-      preserveHistoryOnRefresh: isAndroid,
-    });
-  const jump = useJumpToLatest({
-    conversationId: channel_id || '',
-    enabled: isAndroid,
-    ready: isConversationReady && !isInitialLoading,
-    messageCount: dmsChat.length,
+  const { loadMore, isFetchingMore } = UseChatDetails({
+    channel_id: channel_id || '',
   });
-  const [messageRegionHeight, setMessageRegionHeight] = useState(0);
-  const [composerTop, setComposerTop] = useState<number | null>(null);
-  const jumpStyles = useMemo(
-    () =>
-      StyleSheet.create({
-        region: { flex: 1 },
-        overlay: {
-          position: 'absolute',
-          right: 16,
-          bottom:
-            messageRegionHeight - (composerTop ?? messageRegionHeight) + 12,
-          maxWidth: '90%',
-          zIndex: 1,
-          elevation: 4,
-        },
-        button: {
-          height: 'auto',
-          minHeight: 48,
-          width: 'auto',
-          paddingVertical: 12,
-          paddingHorizontal: 14,
-          backgroundColor: colors.primary,
-        },
-      }),
-    [colors.primary, messageRegionHeight, composerTop],
-  );
   const { uploadFiles, clearUploads } = useFileUpload();
   const mentionUserSheetRef = useRef<MentionUserBottomSheetRef>(null);
   const [callLoading, setCallLoading] = useState(false);
@@ -534,141 +495,92 @@ const ChatDetailScreen = ({ navigation }: any) => {
 
       <ChatBackground />
 
-      <View
-        testID="dm-message-region"
-        style={jumpStyles.region}
-        onLayout={event =>
-          setMessageRegionHeight(event.nativeEvent.layout.height)
-        }
-      >
-        <FlatList
-          key={channel_id}
-          ref={flatListRef}
-          data={dmsChat}
-          inverted
-          onScroll={isAndroid ? jump.onScroll : undefined}
-          onLayout={isAndroid ? jump.onLayout : undefined}
-          onContentSizeChange={isAndroid ? jump.onContentSizeChange : undefined}
-          scrollEventThrottle={isAndroid ? 16 : undefined}
-          maintainVisibleContentPosition={
-            isAndroid ? { minIndexForVisible: 0 } : undefined
-          }
-          keyboardShouldPersistTaps={isAndroid ? 'handled' : undefined}
-          keyboardDismissMode={isAndroid ? 'none' : undefined}
-          showsVerticalScrollIndicator={false}
-          keyExtractor={item => item.thread_id}
-          renderItem={({ item, index }) => (
-            <View
-              style={{
-                marginBottom: 15,
-                backgroundColor:
-                  onEdit && editMsgId === item.thread_id
-                    ? colors.chatHighlight
-                    : 'transparent',
+      <FlatList
+        ref={flatListRef}
+        data={dmsChat}
+        inverted
+        showsVerticalScrollIndicator={false}
+        keyExtractor={item => item.thread_id}
+        renderItem={({ item, index }) => (
+          <View
+            style={{
+              marginBottom: 15,
+              backgroundColor:
+                onEdit && editMsgId === item.thread_id
+                  ? colors.chatHighlight
+                  : 'transparent',
+            }}
+          >
+            <MessageItem
+              item={{
+                ...item,
+                id: item.thread_id,
+                text: item.message,
+                sent: item.user_id === user.user_id,
               }}
-            >
-              <MessageItem
-                item={{
-                  ...item,
-                  id: item.thread_id,
-                  text: item.message,
-                  sent: item.user_id === user.user_id,
-                }}
-                index={index}
-                messages={dmsChat}
-                onLongPress={() => handleLongPress(item)}
-                editMsgId={editMsgId}
-                onEdit={onEdit}
-              />
-            </View>
-          )}
-          contentContainerStyle={styles.listContent}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.1}
-          ListFooterComponent={() =>
-            isFetchingMore ? (
-              <ActivityIndicator
-                size="small"
-                color={colors.primary}
-                style={{ margin: 10 }}
-              />
-            ) : null
-          }
-        />
-
-        <View
-          testID="dm-composer-region"
-          onLayout={event => setComposerTop(event.nativeEvent.layout.y)}
-        >
-          <ChatKeyboardAvoidingView>
-            {mentionState && (
-              <MentionSheet
-                query={mentionState.query}
-                participants={mentionParticipants}
-                onSelect={handleMentionSelect}
-              />
-            )}
-
-            <ChatInput
-              message={message}
-              setMessage={setMessage}
-              onTypingChange={handleTyping}
-              onSend={(content: any) =>
-                onEdit
-                  ? handleSendEditMessage(content)
-                  : handleSendMessage(content)
-              }
-              onVoiceRecorded={handleVoiceRecorded}
-              onVoiceSendReady={handleVoiceSendReady}
-              onVoiceCancel={handleVoiceCancel}
-              isVoiceUploading={isVoiceUploading}
-              onPickImage={pickImage}
-              onMediaPicker={() => pickerSheetRef.current?.expand()}
-              onOpenEmoji={() => setIsEmojiOpen(true)}
-              onCloseEmoji={() => setIsEmojiOpen(false)}
-              isEmojiOpen={isEmojiOpen}
-              onFocus={() => pickerSheetRef.current?.close()}
-              onMentionTrigger={handleMentionTrigger}
-              onMentionCancel={() => setMentionState(null)}
-            />
-
-            {isEmojiOpen && (
-              <View style={styles.emojiWrapper}>
-                <ThemedEmojiKeyboard
-                  onEmojiSelected={handleEmojiSelect}
-                  categoryPosition="bottom"
-                  enableSearchBar
-                  emojiSize={25}
-                />
-              </View>
-            )}
-          </ChatKeyboardAvoidingView>
-        </View>
-        {jump.visible && messageRegionHeight > 0 && composerTop !== null && (
-          <View style={jumpStyles.overlay}>
-            <AppButton
-              title="Jump to latest"
-              accessibilityLabel="Jump to latest"
-              allowFontScaling
-              style={jumpStyles.button}
-              leadingIcon={
-                <View
-                  accessible={false}
-                  importantForAccessibility="no-hide-descendants"
-                >
-                  <Feather name="arrow-down" size={18} color={colors.white} />
-                </View>
-              }
-              onPress={() =>
-                flatListRef.current?.scrollToOffset({
-                  offset: 0,
-                  animated: jump.animated,
-                })
-              }
+              index={index}
+              messages={dmsChat}
+              onLongPress={() => handleLongPress(item)}
+              editMsgId={editMsgId}
+              onEdit={onEdit}
             />
           </View>
         )}
-      </View>
+        contentContainerStyle={styles.listContent}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={() =>
+          isFetchingMore ? (
+            <ActivityIndicator
+              size="small"
+              color={colors.primary}
+              style={{ margin: 10 }}
+            />
+          ) : null
+        }
+      />
+
+      <ChatKeyboardAvoidingView>
+        {mentionState && (
+          <MentionSheet
+            query={mentionState.query}
+            participants={mentionParticipants}
+            onSelect={handleMentionSelect}
+          />
+        )}
+
+        <ChatInput
+          message={message}
+          setMessage={setMessage}
+          onTypingChange={handleTyping}
+          onSend={(content: any) =>
+            onEdit ? handleSendEditMessage(content) : handleSendMessage(content)
+          }
+          onVoiceRecorded={handleVoiceRecorded}
+          onVoiceSendReady={handleVoiceSendReady}
+          onVoiceCancel={handleVoiceCancel}
+          isVoiceUploading={isVoiceUploading}
+          onPickImage={pickImage}
+          onMediaPicker={() => pickerSheetRef.current?.expand()}
+          onOpenEmoji={() => setIsEmojiOpen(true)}
+          onCloseEmoji={() => setIsEmojiOpen(false)}
+          isEmojiOpen={isEmojiOpen}
+          onFocus={() => pickerSheetRef.current?.close()}
+          onMentionTrigger={handleMentionTrigger}
+          onMentionCancel={() => setMentionState(null)}
+        />
+
+        {isEmojiOpen && (
+          <View style={styles.emojiWrapper}>
+            <ThemedEmojiKeyboard
+              onEmojiSelected={handleEmojiSelect}
+              categoryPosition="bottom"
+              enableSearchBar
+              emojiSize={25}
+            />
+          </View>
+        )}
+      </ChatKeyboardAvoidingView>
 
       <MessageAction
         ref={actionSheetRef}
