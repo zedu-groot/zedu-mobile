@@ -35,7 +35,6 @@ export interface AppState {
   // Dms
   dms: Chat[];
   dmsChat: any[];
-  dmsChatRoomId?: string;
   singleDmsChat: any[];
   dmLoading: boolean;
   participant: Participant[];
@@ -209,11 +208,6 @@ const reducers = (state: AppState, action: Action): AppState => {
     case ACTIONS.DMS_CHAT:
       if (action.payload.newMessage) {
         const newMessage = action.payload.newMessage;
-        const incomingRoom = newMessage.channels_id ?? newMessage.channel_id;
-        const dmsChatRoomId =
-          incomingRoom != null && String(incomingRoom) !== state.dmsChatRoomId
-            ? undefined
-            : state.dmsChatRoomId;
 
         // 1. If we receive a REAL message (from Centrifugo)
         if (!newMessage.isOptimistic) {
@@ -225,7 +219,6 @@ const reducers = (state: AppState, action: Action): AppState => {
           return {
             ...state,
             dmsChat: [newMessage, ...cleanList],
-            dmsChatRoomId,
           };
         }
 
@@ -233,63 +226,12 @@ const reducers = (state: AppState, action: Action): AppState => {
         return {
           ...state,
           dmsChat: [newMessage, ...state.dmsChat],
-          dmsChatRoomId,
         };
-      }
-
-      // DM refreshes can retain loaded history without changing other callers.
-      if (
-        action.payload.page === 1 &&
-        action.payload.preserveHistory &&
-        action.payload.roomId &&
-        action.payload.roomId === state.dmsChatRoomId
-      ) {
-        const refreshed = new Map(
-          (action.payload.data || []).map(message => [
-            message.thread_id,
-            message,
-          ]),
-        );
-        const messages = state.dmsChat.map(
-          message => refreshed.get(message.thread_id) || message,
-        );
-        const existingIds = new Set(messages.map(message => message.thread_id));
-        const fresh = Array.from(refreshed.values());
-        // Insert gaps next to their server neighbor; timestamps also protect newer
-        // realtime entries that arrived after this page-one response was requested.
-        for (let index = fresh.length - 1; index >= 0; index--) {
-          const message = fresh[index];
-          if (existingIds.has(message.thread_id)) continue;
-          const neighborIndex = messages.findIndex(
-            item => item.thread_id === fresh[index + 1]?.thread_id,
-          );
-          let insertionIndex = neighborIndex >= 0 ? neighborIndex : 0;
-          const createdAt = Date.parse(message.created_at);
-          if (Number.isFinite(createdAt)) {
-            const olderIndex = messages.findIndex(
-              item => Date.parse(item.created_at) < createdAt,
-            );
-            if (olderIndex >= 0) insertionIndex = olderIndex;
-            else if (
-              neighborIndex < 0 &&
-              messages.every(item =>
-                Number.isFinite(Date.parse(item.created_at)),
-              )
-            )
-              insertionIndex = messages.length;
-          }
-          messages.splice(insertionIndex, 0, message);
-        }
-        return { ...state, dmsChat: messages };
       }
 
       // Pagination logic with double-check filter
       return {
         ...state,
-        dmsChatRoomId:
-          action.payload.page === 1
-            ? action.payload.roomId
-            : state.dmsChatRoomId,
         dmsChat:
           action.payload.page === 1
             ? action.payload.data || []
