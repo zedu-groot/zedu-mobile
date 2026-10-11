@@ -76,7 +76,7 @@
 
 // export default UseChatDetails;
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useLayoutEffect, useRef } from 'react';
 import { ACTIONS } from '@/store/types';
 import { useDataContext } from '@/store/useDataContext';
 import { GetRequest } from '@/utils/requests';
@@ -103,9 +103,11 @@ const UseChatDetails = ({
   const { state, dispatch } = useDataContext();
   const session = useRef(createSession(channel_id));
   const currentRoom = useRef(channel_id);
-  currentRoom.current = channel_id;
   const bufferOwner = useRef(state.dmsChatRoomId);
-  bufferOwner.current = state.dmsChatRoomId;
+  useLayoutEffect(() => {
+    currentRoom.current = channel_id;
+    bufferOwner.current = state.dmsChatRoomId;
+  }, [channel_id, state.dmsChatRoomId]);
   const isFocusedRef = useRef(false);
   const [status, setStatus] = useState({
     roomId: channel_id,
