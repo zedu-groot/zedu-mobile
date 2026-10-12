@@ -27,6 +27,7 @@ const TIME_OPTIONS = Array.from({ length: 24 * 2 }, (_, i) => {
   return `${displayHour}:${min} ${ampm}`;
 });
 
+/** Adds the all-day endpoint exclusively to the To picker. */
 const END_TIME_OPTIONS = [...TIME_OPTIONS, '11:59 PM'];
 
 const CustomToggle = ({
@@ -86,6 +87,7 @@ const SkeletonItem = ({
   skeletonStyle: object;
 }) => <View style={[{ width, height }, skeletonStyle, style]} />;
 
+/** Loads, edits, and saves the mobile notification preferences. */
 const NotificationScreen = ({ navigation }: any) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createSettingsSubScreenStyles(colors), [colors]);

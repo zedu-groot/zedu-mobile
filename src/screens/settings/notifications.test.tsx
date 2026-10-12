@@ -123,6 +123,7 @@ describe('notification end-time picker', () => {
     await act(() => renderer?.unmount());
   });
 
+  /** Mounts the screen and waits for the mocked preferences to load. */
   async function renderScreen() {
     await act(async () => {
       renderer = TestRenderer.create(
@@ -131,10 +132,12 @@ describe('notification end-time picker', () => {
     });
   }
 
+  /** Invokes a press handler and flushes its resulting React updates. */
   async function press(node: ReactTestInstance) {
     await act(async () => node.props.onPress());
   }
 
+  /** Finds the screen button containing the exact visible label. */
   function labeledButton(label: string) {
     return renderer.root
       .findAllByType(TouchableOpacity)
@@ -143,6 +146,7 @@ describe('notification end-time picker', () => {
       )!;
   }
 
+  /** Finds the time input belonging to the From or To field. */
   function timeField(label: 'From' | 'To') {
     const box = renderer.root
       .findAllByType(View)
@@ -156,16 +160,19 @@ describe('notification end-time picker', () => {
     return box.findByType(TouchableOpacity);
   }
 
+  /** Returns the selectable rows inside the mocked time picker sheet. */
   function rows() {
     return renderer.root
       .findByProps({ testID: 'time-picker' })
       .findAllByType(TouchableOpacity);
   }
 
+  /** Reads the picker options in their displayed order. */
   function rowLabels() {
     return rows().map(row => row.findByType(AppText).props.children);
   }
 
+  /** Reads the option labels marked with the selection checkmark. */
   function selectedLabels() {
     return rows()
       .filter(row =>
@@ -176,6 +183,7 @@ describe('notification end-time picker', () => {
       .map(row => row.findByType(AppText).props.children);
   }
 
+  /** Selects a time through its rendered picker row. */
   async function choose(time: string) {
     const row = rows().find(
       item => item.findByType(AppText).props.children === time,
@@ -184,6 +192,7 @@ describe('notification end-time picker', () => {
     await press(row!);
   }
 
+  /** Edits preferences, then restores and reopens the all-day end time. */
   async function restoreEndpoint() {
     await press(labeledButton('Mentions'));
     await press(timeField('From'));
