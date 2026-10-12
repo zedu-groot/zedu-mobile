@@ -65,23 +65,29 @@ export default function GeneralNotificationConnection() {
     }
   };
 
+  // Latest state and token getters for the long-lived subscription below.
+  const latest = useRef({ state, getConnectionToken, getSubscriptionToken });
+  useEffect(() => {
+    latest.current = { state, getConnectionToken, getSubscriptionToken };
+  });
+
   // centrifugo connection for notification
   useEffect(() => {
     if (!orgId || !user?.user_id || !token) return;
 
     const channel = `${orgId}/${user.user_id}`;
 
-    getSubscriptionToken(channel);
+    latest.current.getSubscriptionToken(channel);
 
     // Initialize Centrifuge client
     const centrifugeClient: any = new Centrifuge(CONNECT_URL, {
-      getToken: getConnectionToken,
+      getToken: () => latest.current.getConnectionToken(),
       debug: true,
     });
 
     // Function to get the token for the personal channel
     const getPersonalChannelSubscriptionToken = async () => {
-      return getSubscriptionToken(channel);
+      return latest.current.getSubscriptionToken(channel);
     };
 
     // Create a subscription to the channel
@@ -92,6 +98,7 @@ export default function GeneralNotificationConnection() {
     // // message publishing
     sub.on('publication', (ctx: any) => {
       const { data } = ctx;
+      const live = latest.current.state;
 
       // console.log(data, 'general notification centrifugo');
 
@@ -135,7 +142,7 @@ export default function GeneralNotificationConnection() {
         isGroupParticipantChangeEvent(data)
       ) {
         const participantsList = extractGroupParticipants(data);
-        const currentParticipants = state.participant || [];
+        const currentParticipants = live.participant || [];
 
         if (participantsList) {
           const isSameGroup =
@@ -151,7 +158,7 @@ export default function GeneralNotificationConnection() {
             dispatch({ type: ACTIONS.PARTICIPANT, payload: participantsList });
             dispatch({
               type: ACTIONS.GROUP_CALLBACK,
-              payload: !state.groupCallback,
+              payload: !live.groupCallback,
             });
           }
         } else {
@@ -172,7 +179,7 @@ export default function GeneralNotificationConnection() {
             });
             dispatch({
               type: ACTIONS.GROUP_CALLBACK,
-              payload: !state.groupCallback,
+              payload: !live.groupCallback,
             });
           }
         }
@@ -212,7 +219,7 @@ export default function GeneralNotificationConnection() {
         });
 
         if (incomingThreads.length > 0) {
-          const existingMentions = [...(state.mentionsList || [])];
+          const existingMentions = [...(live.mentionsList || [])];
 
           incomingThreads.forEach(newMention => {
             const existingIndex = existingMentions.findIndex(
@@ -312,9 +319,9 @@ export default function GeneralNotificationConnection() {
           });
 
           if (String(newUser.user_id) === String(user?.user_id) && buzzId) {
-            const activeBuzzId = String(state?.buzzData?.buzz_id || '');
+            const activeBuzzId = String(live?.buzzData?.buzz_id || '');
             const isAlreadyInThisCall =
-              activeBuzzId === String(buzzId) && Boolean(state?.hasJoined);
+              activeBuzzId === String(buzzId) && Boolean(live?.hasJoined);
 
             if (
               !isAlreadyInThisCall &&
@@ -390,7 +397,7 @@ export default function GeneralNotificationConnection() {
         // Update channelDetails (object)
         dispatch({
           type: ACTIONS.CHANNEL_DETAILS,
-          payload: { ...state?.channelDetails, active_buzz } as any,
+          payload: { ...live?.channelDetails, active_buzz } as any,
         });
         // Also update userChannels for buzz signal
         dispatch({
@@ -405,7 +412,7 @@ export default function GeneralNotificationConnection() {
       // BUZZ ENDED
       if (data?.notification_type === 'buzz_ended') {
         // Remove active_buzz from channelDetails (object)
-        const { active_buzz, ...rest } = state?.channelDetails ?? {};
+        const { active_buzz, ...rest } = live?.channelDetails ?? {};
         dispatch({
           type: ACTIONS.CHANNEL_DETAILS,
           payload: rest as any,

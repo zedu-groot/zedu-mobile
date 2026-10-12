@@ -33,7 +33,6 @@ import { RootStackParamList } from '@/navigation/navigator';
 import { UserAvatarWithStatus } from '@/components/ui/user-avatar-with-status';
 import { formatPreviewMessage } from '@/utils/message-text';
 import { UserAvatar } from '@/screens/channels/user-avatar';
-import { getDmCounterpart } from '@/utils/chat-message-layout';
 
 const HomeScreen = () => {
   const navigation = useNavigation<DrawerNavigationProp<RootStackParamList>>();
@@ -316,8 +315,9 @@ const HomeScreen = () => {
                             avatar_url: item.avatar_url,
                             default_avatar_url: item.default_avatar_url,
                             online:
-                              getDmCounterpart(item.participants, user?.user_id)
-                                ?.online ?? item.online,
+                              item.participants?.find(
+                                p => p.user_id !== user?.user_id,
+                              )?.online ?? item.online,
                           }}
                           size={45}
                           badgeSize={12}
