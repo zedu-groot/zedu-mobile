@@ -178,6 +178,24 @@ export default function GeneralNotificationConnection() {
         }
       }
 
+      // New DM message: the server only sends `new_message` here (no DM
+      // `unread_thread_change`), so re-sync the Chats list for preview,
+      // unread count and order.
+      if (
+        data?.section === 'thread_message' &&
+        data?.notification_type === 'new_message'
+      ) {
+        const channelType = String(
+          data?.data?.channel_type || '',
+        ).toLowerCase();
+        const isChannelMessage =
+          channelType === 'public' || channelType === 'private';
+
+        if (!isChannelMessage) {
+          scheduleSilentDmSync(orgId, dispatch);
+        }
+      }
+
       // mention thread section
       if (
         data?.notification_type === 'thread_notification' &&

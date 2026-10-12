@@ -58,6 +58,35 @@ export function createMessageItemStyles(colors: ThemeColors, width: number) {
     messageWrapper: { maxWidth: '85%' },
     sentWrapper: { alignSelf: 'flex-end' },
     receivedWrapper: { alignSelf: 'flex-start' },
+    avatarRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      gap: 6,
+    },
+    avatarRowSent: { flexDirection: 'row-reverse' },
+    avatarRowWrapper: { alignSelf: 'flex-end', flexShrink: 1 },
+    senderAvatarSpacer: {
+      width: normalize(28),
+      height: normalize(28),
+    },
+    replyBarSentWithAvatar: { marginRight: 8 + normalize(28) + 6 },
+    replyBarReceivedWithAvatar: { marginLeft: 8 + normalize(28) + 6 },
+    newMarker: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 4,
+      marginBottom: 10,
+    },
+    newMarkerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.unreadMarker,
+    },
+    newMarkerText: {
+      color: colors.unreadMarker,
+      letterSpacing: 0.6,
+      marginLeft: 6,
+    },
     bubble: {
       padding: 4,
       borderRadius: 12,

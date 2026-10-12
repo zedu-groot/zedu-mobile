@@ -25,12 +25,15 @@ import { Chat } from '@/types/chats';
 import { ACTIONS } from '@/store/types';
 import UseGetOrg from '@/services/org/get-org';
 import GeneralNotificationConnection from '@/centrifugoo/general-notification-connection';
+import StatusConnection from '@/centrifugoo/status-connection';
 import { OneSignal } from 'react-native-onesignal';
 import { ONESIGNAL_APP_ID } from '@env';
 import { PostRequest, PutRequest } from '@/utils/requests';
 import { RootStackParamList } from '@/navigation/navigator';
 import { UserAvatarWithStatus } from '@/components/ui/user-avatar-with-status';
 import { formatPreviewMessage } from '@/utils/message-text';
+import { UserAvatar } from '@/screens/channels/user-avatar';
+import { getDmCounterpart } from '@/utils/chat-message-layout';
 
 const HomeScreen = () => {
   const navigation = useNavigation<DrawerNavigationProp<RootStackParamList>>();
@@ -93,6 +96,8 @@ const HomeScreen = () => {
         params: {
           participant_id: props?.participant_id,
           channel_id: props?.channel_id,
+          // Captured before the count is reset so the chat can mark new messages.
+          unread_count: props?.thread_count || 0,
         },
       });
     } else {
@@ -150,6 +155,7 @@ const HomeScreen = () => {
   return (
     <Container color={colors.secondary} dark={true}>
       <GeneralNotificationConnection />
+      <StatusConnection />
       <UseGetOrg />
       <View style={styles.topHeader}>
         <View style={styles.profileTop}>
@@ -175,7 +181,7 @@ const HomeScreen = () => {
             </AppText>
           </TouchableOpacity>
 
-          <UserAvatarWithStatus user={user} />
+          <UserAvatarWithStatus user={user} badgeRingColor={colors.secondary} />
         </View>
 
         <View style={styles.searchBar}>
@@ -276,7 +282,13 @@ const HomeScreen = () => {
                         : handleNavigate(item)
                     }
                   >
-                    <View style={styles.avatarWrapper}>
+                    <View
+                      style={
+                        item.channel_type === 'group_dm'
+                          ? styles.avatarWrapper
+                          : styles.dmAvatarWrapper
+                      }
+                    >
                       {item.channel_type === 'group_dm' ? (
                         <View style={styles.groupAvatarContainer}>
                           {item.participants
@@ -299,11 +311,19 @@ const HomeScreen = () => {
                             ))}
                         </View>
                       ) : (
-                        <Image
-                          source={{
-                            uri: item.avatar_url || item.default_avatar_url,
+                        <UserAvatar
+                          user={{
+                            avatar_url: item.avatar_url,
+                            default_avatar_url: item.default_avatar_url,
+                            online:
+                              getDmCounterpart(item.participants, user?.user_id)
+                                ?.online ?? item.online,
                           }}
-                          style={styles.chatAvatar}
+                          size={45}
+                          badgeSize={12}
+                          badgeRingColor={colors.background}
+                          fallbackName={item.username}
+                          disabled
                         />
                       )}
                     </View>

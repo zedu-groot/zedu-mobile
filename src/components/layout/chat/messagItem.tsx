@@ -26,8 +26,15 @@ import {
 import { isVoiceMessageMedia } from '@/utils/voice-message';
 import { isVideoFile } from '@/utils/file-helpers';
 import ReactionDetailsSheet from './reaction-details';
+import { UserAvatar } from '@/screens/channels/user-avatar';
 
 const { width } = Dimensions.get('window');
+
+export type MessageAvatarUser = {
+  avatar_url?: string;
+  default_avatar_url?: string;
+  name?: string;
+};
 
 const MessageItem = ({
   item,
@@ -36,6 +43,9 @@ const MessageItem = ({
   onLongPress,
   editMsgId,
   onEdit,
+  avatarSlot,
+  avatarUser,
+  showNewMarker = false,
 }: any) => {
   const { colors } = useTheme();
   const styles = useMemo(
@@ -205,6 +215,10 @@ const MessageItem = ({
     const replyBarStyle = [
       styles.slackThreadContainer,
       item.sent ? styles.replyBarSent : styles.replyBarReceived,
+      avatarSlot &&
+        (item.sent
+          ? styles.replyBarSentWithAvatar
+          : styles.replyBarReceivedWithAvatar),
       hasReactions && { marginTop: 18 },
     ];
 
@@ -249,6 +263,56 @@ const MessageItem = ({
     />
   );
 
+  const renderBubble = () => (
+    <TouchableOpacity
+      activeOpacity={0.5}
+      onLongPress={() => onLongPress(item)}
+      // delayLongPress={200}
+      style={[
+        styles.messageWrapper,
+        item.sent ? styles.sentWrapper : styles.receivedWrapper,
+        avatarSlot && styles.avatarRowWrapper,
+      ]}
+    >
+      <View
+        style={[
+          styles.bubble,
+          item.sent ? styles.sentBubble : styles.receivedBubble,
+          editMsgId === item.thread_id && onEdit
+            ? { backgroundColor: colors.chatHighlight }
+            : undefined,
+        ]}
+      >
+        {!forwardData && item.media && item.media.length > 0 && (
+          <View style={styles.verticalMediaStack}>
+            {item.media.map((m: any) => (
+              <View key={m.id || m.url}>{renderMediaItem(m)}</View>
+            ))}
+          </View>
+        )}
+
+        {forwardData
+          ? showForwardComment && renderMessageContent()
+          : hasMessageContent(item.message) && renderMessageContent()}
+
+        {forwardData ? <ForwardedMessageBlock data={forwardData} /> : null}
+
+        <View style={styles.messageFooter}>
+          <AppText size={10} style={styles.timeText}>
+            {moment(item.created_at).format('LT')}
+          </AppText>
+        </View>
+        {item.edited && (
+          <AppText size={10} style={styles.timeText}>
+            Edited
+          </AppText>
+        )}
+
+        {renderReactions()}
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <View>
       {showDateHeader && (
@@ -264,52 +328,40 @@ const MessageItem = ({
         </View>
       )}
 
-      <TouchableOpacity
-        activeOpacity={0.5}
-        onLongPress={() => onLongPress(item)}
-        // delayLongPress={200}
-        style={[
-          styles.messageWrapper,
-          item.sent ? styles.sentWrapper : styles.receivedWrapper,
-        ]}
-      >
+      {showNewMarker && (
         <View
-          style={[
-            styles.bubble,
-            item.sent ? styles.sentBubble : styles.receivedBubble,
-            editMsgId === item.thread_id && onEdit
-              ? { backgroundColor: colors.chatHighlight }
-              : undefined,
-          ]}
+          style={styles.newMarker}
+          accessible
+          accessibilityLabel="New messages"
         >
-          {!forwardData && item.media && item.media.length > 0 && (
-            <View style={styles.verticalMediaStack}>
-              {item.media.map((m: any) => (
-                <View key={m.id || m.url}>{renderMediaItem(m)}</View>
-              ))}
-            </View>
-          )}
-
-          {forwardData
-            ? showForwardComment && renderMessageContent()
-            : hasMessageContent(item.message) && renderMessageContent()}
-
-          {forwardData ? <ForwardedMessageBlock data={forwardData} /> : null}
-
-          <View style={styles.messageFooter}>
-            <AppText size={10} style={styles.timeText}>
-              {moment(item.created_at).format('LT')}
-            </AppText>
-          </View>
-          {item.edited && (
-            <AppText size={10} style={styles.timeText}>
-              Edited
-            </AppText>
-          )}
-
-          {renderReactions()}
+          <View style={styles.newMarkerLine} />
+          <AppText variant="bold" size={10.5} style={styles.newMarkerText}>
+            NEW
+          </AppText>
         </View>
-      </TouchableOpacity>
+      )}
+
+      {avatarSlot ? (
+        <View style={[styles.avatarRow, item.sent && styles.avatarRowSent]}>
+          {avatarSlot === 'avatar' ? (
+            <UserAvatar
+              user={{
+                avatar_url: avatarUser?.avatar_url,
+                default_avatar_url: avatarUser?.default_avatar_url,
+              }}
+              size={28}
+              showBadge={false}
+              fallbackName={avatarUser?.name || item?.username}
+              disabled
+            />
+          ) : (
+            <View style={styles.senderAvatarSpacer} />
+          )}
+          {renderBubble()}
+        </View>
+      ) : (
+        renderBubble()
+      )}
 
       {item.message_count > 0 && renderReplyParticipants()}
 

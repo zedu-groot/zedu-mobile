@@ -88,6 +88,17 @@ export function createChatListStyles(colors: ThemeColors) {
       borderWidth: 1,
       borderColor: colors.border,
     },
+    dmAvatarWrapper: {
+      width: 50,
+      height: 50,
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+      borderRadius: 25,
+      zIndex: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
     groupAvatarContainer: {
       width: 50,
       height: 50,
