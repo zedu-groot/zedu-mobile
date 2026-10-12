@@ -2,10 +2,12 @@ import React, { useRef, useState, useEffect, useMemo } from 'react';
 import {
   View,
   Image,
+  Platform,
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { createChatInfoStyles } from '@/theme/createScreenStyles';
@@ -21,6 +23,10 @@ import BuzzService from '@/services/buzz.service';
 import buzzService from '@/services/buzz.service';
 import { UserProfileStatus } from '@/components/ui/user-profile-status';
 import { ContactInfoCard } from '@/components/ui/contact-info-card';
+import { navigationBarBottomPadding } from '@/utils/status-bar-inset';
+
+/** Space kept below the last row on Android, on top of the navigation bar. */
+const ANDROID_BOTTOM_MARGIN = 16;
 
 const getFileExtension = (fileName: string): string => {
   if (!fileName) return '';
@@ -64,6 +70,15 @@ const isDocFile = (mime: string, fileName: string) => {
 const UserDetailScreen = ({ navigation, route }: any) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createChatInfoStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
+  const scrollContentStyle = useMemo(
+    () => ({
+      paddingBottom:
+        navigationBarBottomPadding(insets.bottom) +
+        (Platform.OS === 'android' ? ANDROID_BOTTOM_MARGIN : 0),
+    }),
+    [insets.bottom],
+  );
   const [callLoading, setCallLoading] = useState(false);
   const actionSheetRef = useRef<any>(null);
 
@@ -196,7 +211,11 @@ const UserDetailScreen = ({ navigation, route }: any) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} bounces={true}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+        contentContainerStyle={scrollContentStyle}
+      >
         <View style={styles.profileHero}>
           <View style={styles.mainAvatarContainer}>
             <Image
