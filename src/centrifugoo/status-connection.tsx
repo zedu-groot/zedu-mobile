@@ -48,16 +48,22 @@ const StatusConnection = () => {
     }
   };
 
+  // Latest token getters for the long-lived subscription below.
+  const tokenGetters = useRef({ getConnectionToken, getSubscriptionToken });
+  useEffect(() => {
+    tokenGetters.current = { getConnectionToken, getSubscriptionToken };
+  });
+
   useEffect(() => {
     if (!orgId || !state?.token) return;
 
     const centrifugeClient: any = new Centrifuge(CONNECT_URL, {
-      getToken: getConnectionToken,
+      getToken: () => tokenGetters.current.getConnectionToken(),
       debug: true,
     });
 
     const sub = centrifugeClient.newSubscription(orgId, {
-      getToken: () => getSubscriptionToken(orgId),
+      getToken: () => tokenGetters.current.getSubscriptionToken(orgId),
     });
 
     sub.on('publication', (ctx: any) => {
@@ -117,7 +123,7 @@ const StatusConnection = () => {
       sub.unsubscribe();
       centrifugeClient.disconnect();
     };
-  }, [orgId, state?.token]);
+  }, [dispatch, orgId, state?.token]);
 
   return null;
 };
