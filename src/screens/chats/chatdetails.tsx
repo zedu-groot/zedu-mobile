@@ -13,9 +13,7 @@ import Container from '@/components/layout/container';
 import { useTheme } from '@/theme/ThemeProvider';
 import { launchCamera } from 'react-native-image-picker';
 import { ThemedEmojiKeyboard } from '@/components/ui/themed-emoji-keyboard';
-import MessageItem, {
-  MessageAvatarUser,
-} from '@/components/layout/chat/messagItem';
+import MessageItem from '@/components/layout/chat/messagItem';
 import MentionUserBottomSheet, {
   MentionUserBottomSheetRef,
 } from '@/components/layout/chat/mention-user-bottomsheet';
@@ -48,10 +46,6 @@ import { useMessageDraft } from '@/hooks/useMessageDraft';
 import { useJumpToLatest } from '@/hooks/useJumpToLatest';
 import { AppButton } from '@/components/ui/button';
 import { UserAvatar } from '@/screens/channels/user-avatar';
-import {
-  getFirstUnreadMessageId,
-  getSenderAvatarSlot,
-} from '@/utils/chat-message-layout';
 
 const ChatDetailScreen = ({ navigation }: any) => {
   const { colors } = useTheme();
@@ -89,7 +83,7 @@ const ChatDetailScreen = ({ navigation }: any) => {
     orgId,
   } = state;
   const route = useRoute<RouteProp<ChatStackParamList, 'ChatDetails'>>();
-  const { channel_id, fromNotification, unread_count } = route.params ?? {};
+  const { channel_id, fromNotification } = route.params ?? {};
   const participants = Array.isArray(participant) ? participant : [];
   const headerParticipant =
     participants.find(p => p.user_id !== user?.user_id) || participants[0];
@@ -105,82 +99,6 @@ const ChatDetailScreen = ({ navigation }: any) => {
     ready: isConversationReady && !isInitialLoading,
     messageCount: dmsChat.length,
   });
-  // Unread count is captured by the Chats list before the chat is marked as
-  // read; the marker is resolved once per visit so it stays put.
-  const unreadSnapshot = useRef({ count: 0, resolved: false });
-  const [newMarkerId, setNewMarkerId] = useState<string | null>(null);
-
-  useEffect(() => {
-    unreadSnapshot.current = { count: unread_count ?? 0, resolved: false };
-    setNewMarkerId(null);
-    // Only reset when the conversation changes, not when params are re-read.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channel_id]);
-
-  useEffect(() => {
-    const snapshot = unreadSnapshot.current;
-    if (snapshot.resolved || !isConversationReady || isInitialLoading) return;
-    snapshot.resolved = true;
-    setNewMarkerId(
-      getFirstUnreadMessageId(dmsChat, snapshot.count, user?.user_id),
-    );
-  }, [isConversationReady, isInitialLoading, dmsChat, user?.user_id]);
-
-  const scrolledToMarker = useRef<string | null>(null);
-  const markerScrollRetries = useRef(0);
-  useEffect(() => {
-    if (!newMarkerId || scrolledToMarker.current === newMarkerId) return;
-    const index = dmsChat.findIndex(
-      (entry: any) => entry.thread_id === newMarkerId,
-    );
-    if (index < 0) return;
-    scrolledToMarker.current = newMarkerId;
-    markerScrollRetries.current = 0;
-    // Inverted list: viewPosition near 1 puts the marker near the top of the
-    // screen with the new messages below it; offsets clamp at the latest.
-    const timer = setTimeout(() => {
-      flatListRef.current?.scrollToIndex({
-        index,
-        viewPosition: 0.9,
-        animated: false,
-      });
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [newMarkerId, dmsChat]);
-
-  const handleScrollToIndexFailed = (info: {
-    index: number;
-    averageItemLength: number;
-  }) => {
-    if (markerScrollRetries.current >= 3) return;
-    markerScrollRetries.current += 1;
-    flatListRef.current?.scrollToOffset({
-      offset: info.averageItemLength * info.index,
-      animated: false,
-    });
-    setTimeout(() => {
-      flatListRef.current?.scrollToIndex({
-        index: info.index,
-        viewPosition: 0.9,
-        animated: false,
-      });
-    }, 100);
-  };
-
-  const getAvatarUser = (item: any): MessageAvatarUser =>
-    item.user_id === user?.user_id
-      ? {
-          avatar_url: user?.avatar_url,
-          default_avatar_url: user?.default_avatar_url,
-          name: user?.full_name || user?.username,
-        }
-      : {
-          avatar_url: item.avatar_url || headerParticipant?.avatar_url,
-          default_avatar_url:
-            item.default_avatar_url || headerParticipant?.default_avatar_url,
-          name: item.full_name || item.username || headerParticipant?.username,
-        };
-
   const [messageRegionHeight, setMessageRegionHeight] = useState(0);
   const [composerTop, setComposerTop] = useState<number | null>(null);
   const jumpStyles = useMemo(
@@ -656,7 +574,6 @@ const ChatDetailScreen = ({ navigation }: any) => {
           keyboardDismissMode={isAndroid ? 'none' : undefined}
           showsVerticalScrollIndicator={false}
           keyExtractor={item => item.thread_id}
-          onScrollToIndexFailed={handleScrollToIndexFailed}
           renderItem={({ item, index }) => (
             <View
               style={{
@@ -679,9 +596,6 @@ const ChatDetailScreen = ({ navigation }: any) => {
                 onLongPress={() => handleLongPress(item)}
                 editMsgId={editMsgId}
                 onEdit={onEdit}
-                avatarSlot={getSenderAvatarSlot(dmsChat, index)}
-                avatarUser={getAvatarUser(item)}
-                showNewMarker={item.thread_id === newMarkerId}
               />
             </View>
           )}

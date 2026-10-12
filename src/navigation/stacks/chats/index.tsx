@@ -19,7 +19,6 @@ export type ChatStackParamList = {
     restore_participants?: any[];
     restore_dms_chat?: any[];
     fromNotification?: boolean;
-    unread_count?: number;
   };
   CallScreen: undefined;
   GroupChatDetails: {

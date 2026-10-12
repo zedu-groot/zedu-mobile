@@ -96,8 +96,6 @@ const HomeScreen = () => {
         params: {
           participant_id: props?.participant_id,
           channel_id: props?.channel_id,
-          // Captured before the count is reset so the chat can mark new messages.
-          unread_count: props?.thread_count || 0,
         },
       });
     } else {

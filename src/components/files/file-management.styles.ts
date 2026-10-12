@@ -931,7 +931,6 @@ export const fileManagementStyles = createFileManagementStyles({
   chatSentBubble: '#F2F2FF',
   chatReceivedBubble: '#FFFFFF',
   chatHighlight: '#f3ffc1',
-  unreadMarker: '#DC2626',
   channelMentionBackground: '#FFE066',
   channelMentionForeground: '#CA8A04',
   categoryChip: '#F3F4F6',

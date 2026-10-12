@@ -40,7 +40,6 @@ export const lightColors: ThemeColors = {
   chatSentBubble: '#F2F2FF',
   chatReceivedBubble: '#FFFFFF',
   chatHighlight: '#f3ffc1',
-  unreadMarker: '#DC2626',
   channelMentionBackground: '#FFE066',
   channelMentionForeground: '#CA8A04',
 
@@ -98,7 +97,6 @@ export const darkColors: ThemeColors = {
   chatSentBubble: '#2A2640',
   chatReceivedBubble: '#222529',
   chatHighlight: '#3D3A28',
-  unreadMarker: '#DC2626',
   channelMentionBackground: '#6B5600',
   channelMentionForeground: '#FACC15',
 

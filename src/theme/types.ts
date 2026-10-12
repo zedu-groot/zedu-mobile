@@ -55,7 +55,6 @@ export type ThemeColors = {
   chatSentBubble: string;
   chatReceivedBubble: string;
   chatHighlight: string;
-  unreadMarker: string;
   channelMentionBackground: string;
   channelMentionForeground: string;
 
