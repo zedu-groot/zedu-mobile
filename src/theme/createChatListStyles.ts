@@ -82,11 +82,26 @@ export function createChatListStyles(colors: ThemeColors) {
       justifyContent: 'center',
       alignItems: 'center',
       position: 'relative',
-      overflow: 'hidden',
       borderRadius: 25,
       zIndex: 6,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    statusBadge: {
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      width: normalize(12),
+      height: normalize(12),
+      borderRadius: normalize(6),
+      borderWidth: 2,
+      borderColor: colors.white,
+    },
+    onlineBadge: {
+      backgroundColor: colors.online,
+    },
+    offlineBadge: {
+      backgroundColor: colors.offline,
     },
     groupAvatarContainer: {
       width: 50,
