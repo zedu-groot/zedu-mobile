@@ -31,6 +31,7 @@ import { PostRequest, PutRequest } from '@/utils/requests';
 import { RootStackParamList } from '@/navigation/navigator';
 import { UserAvatarWithStatus } from '@/components/ui/user-avatar-with-status';
 import { formatPreviewMessage } from '@/utils/message-text';
+import { getCategoryLabel, getDmUserStatus } from '@/utils/chat-tab-helpers';
 
 const HomeScreen = () => {
   const navigation = useNavigation<DrawerNavigationProp<RootStackParamList>>();
@@ -50,8 +51,8 @@ const HomeScreen = () => {
 
   const CATEGORY_LIST = [
     { id: 'All', label: 'All' },
-    { id: 'Unread', label: `Unread  ${totalUnreadCount}` },
-    { id: 'Groups', label: `Groups  ${groupCount}` },
+    { id: 'Unread', label: getCategoryLabel('Unread', totalUnreadCount) },
+    { id: 'Groups', label: getCategoryLabel('Groups', groupCount) },
     { id: 'Favorites', label: 'Favorites' },
   ];
 
@@ -299,12 +300,24 @@ const HomeScreen = () => {
                             ))}
                         </View>
                       ) : (
-                        <Image
-                          source={{
-                            uri: item.avatar_url || item.default_avatar_url,
-                          }}
-                          style={styles.chatAvatar}
-                        />
+                        <>
+                          <Image
+                            source={{
+                              uri: item.avatar_url || item.default_avatar_url,
+                            }}
+                            style={styles.chatAvatar}
+                          />
+                          {user?.user_id && (
+                            <View
+                              style={[
+                                styles.statusBadge,
+                                getDmUserStatus(item, user?.user_id)
+                                  ? styles.onlineBadge
+                                  : styles.offlineBadge,
+                              ]}
+                            />
+                          )}
+                        </>
                       )}
                     </View>
 
