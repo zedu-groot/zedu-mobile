@@ -307,14 +307,16 @@ const HomeScreen = () => {
                             }}
                             style={styles.chatAvatar}
                           />
-                          <View
-                            style={[
-                              styles.statusBadge,
-                              getDmUserStatus(item, user?.user_id)
-                                ? styles.onlineBadge
-                                : styles.offlineBadge,
-                            ]}
-                          />
+                          {user?.user_id && (
+                            <View
+                              style={[
+                                styles.statusBadge,
+                                getDmUserStatus(item, user?.user_id)
+                                  ? styles.onlineBadge
+                                  : styles.offlineBadge,
+                              ]}
+                            />
+                          )}
                         </>
                       )}
                     </View>
