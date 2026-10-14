@@ -32,6 +32,7 @@ import { PostRequest, PutRequest } from '@/utils/requests';
 import { RootStackParamList } from '@/navigation/navigator';
 import { UserAvatarWithStatus } from '@/components/ui/user-avatar-with-status';
 import { formatPreviewMessage } from '@/utils/message-text';
+import { getCategoryLabel, getDmUserStatus } from '@/utils/chat-tab-helpers';
 import { UserAvatar } from '@/screens/channels/user-avatar';
 
 const HomeScreen = () => {
@@ -52,8 +53,8 @@ const HomeScreen = () => {
 
   const CATEGORY_LIST = [
     { id: 'All', label: 'All' },
-    { id: 'Unread', label: `Unread  ${totalUnreadCount}` },
-    { id: 'Groups', label: `Groups  ${groupCount}` },
+    { id: 'Unread', label: getCategoryLabel('Unread', totalUnreadCount) },
+    { id: 'Groups', label: getCategoryLabel('Groups', groupCount) },
     { id: 'Favorites', label: 'Favorites' },
   ];
 
@@ -281,13 +282,7 @@ const HomeScreen = () => {
                         : handleNavigate(item)
                     }
                   >
-                    <View
-                      style={
-                        item.channel_type === 'group_dm'
-                          ? styles.avatarWrapper
-                          : styles.dmAvatarWrapper
-                      }
-                    >
+                    <View style={styles.avatarWrapper}>
                       {item.channel_type === 'group_dm' ? (
                         <View style={styles.groupAvatarContainer}>
                           {item.participants
@@ -314,10 +309,7 @@ const HomeScreen = () => {
                           user={{
                             avatar_url: item.avatar_url,
                             default_avatar_url: item.default_avatar_url,
-                            online:
-                              item.participants?.find(
-                                p => p.user_id !== user?.user_id,
-                              )?.online ?? item.online,
+                            online: getDmUserStatus(item, user?.user_id),
                           }}
                           size={45}
                           badgeSize={12}
