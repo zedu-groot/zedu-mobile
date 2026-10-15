@@ -26,8 +26,15 @@ import {
 import { isVoiceMessageMedia } from '@/utils/voice-message';
 import { isVideoFile } from '@/utils/file-helpers';
 import ReactionDetailsSheet from './reaction-details';
+import { UserAvatar } from '@/screens/channels/user-avatar';
 
 const { width } = Dimensions.get('window');
+
+export type MessageAvatarUser = {
+  avatar_url?: string;
+  default_avatar_url?: string;
+  name?: string;
+};
 
 const MessageItem = ({
   item,
@@ -36,6 +43,9 @@ const MessageItem = ({
   onLongPress,
   editMsgId,
   onEdit,
+  avatarSlot,
+  avatarUser,
+  showNewMarker = false,
 }: any) => {
   const { colors } = useTheme();
   const styles = useMemo(
@@ -205,6 +215,10 @@ const MessageItem = ({
     const replyBarStyle = [
       styles.slackThreadContainer,
       item.sent ? styles.replyBarSent : styles.replyBarReceived,
+      avatarSlot &&
+        (item.sent
+          ? styles.replyBarSentWithAvatar
+          : styles.replyBarReceivedWithAvatar),
       hasReactions && { marginTop: 18 },
     ];
 
@@ -264,6 +278,19 @@ const MessageItem = ({
         </View>
       )}
 
+      {showNewMarker && (
+        <View
+          style={styles.newMarker}
+          accessible
+          accessibilityLabel="New messages"
+        >
+          <View style={styles.newMarkerLine} />
+          <AppText variant="bold" size={10.5} style={styles.newMarkerText}>
+            NEW
+          </AppText>
+        </View>
+      )}
+
       <TouchableOpacity
         activeOpacity={0.5}
         onLongPress={() => onLongPress(item)}
@@ -271,6 +298,10 @@ const MessageItem = ({
         style={[
           styles.messageWrapper,
           item.sent ? styles.sentWrapper : styles.receivedWrapper,
+          avatarSlot &&
+            (item.sent
+              ? styles.withSenderAvatarSent
+              : styles.withSenderAvatarReceived),
         ]}
       >
         <View
@@ -309,6 +340,22 @@ const MessageItem = ({
 
           {renderReactions()}
         </View>
+
+        {avatarSlot === 'avatar' && (
+          <UserAvatar
+            user={{
+              avatar_url: avatarUser?.avatar_url,
+              default_avatar_url: avatarUser?.default_avatar_url,
+            }}
+            size={28}
+            showBadge={false}
+            fallbackName={avatarUser?.name || item?.username}
+            disabled
+            style={
+              item.sent ? styles.senderAvatarSent : styles.senderAvatarReceived
+            }
+          />
+        )}
       </TouchableOpacity>
 
       {item.message_count > 0 && renderReplyParticipants()}
