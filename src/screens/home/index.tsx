@@ -7,7 +7,9 @@ import {
   TextInput,
   FlatList,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { ThemedRefreshControl } from '@/components/ui/themed-refresh-control';
 import { AppText } from '@/components/ui/text';
 import { normalize } from '@/utils/normalize';
@@ -192,6 +194,17 @@ const HomeScreen = () => {
           />
           {loading && search.length > 0 && (
             <ActivityIndicator size="small" color={colors.white} />
+          )}
+          {search.length > 0 && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Clear conversation search"
+              style={localStyles.clearSearchButton}
+              hitSlop={12}
+              onPress={() => setSearch('')}
+            >
+              <Ionicons name="close" size={20} color={colors.white} />
+            </TouchableOpacity>
           )}
         </View>
       </View>
@@ -380,3 +393,12 @@ const HomeScreen = () => {
 };
 
 export default HomeScreen;
+
+const localStyles = StyleSheet.create({
+  clearSearchButton: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
