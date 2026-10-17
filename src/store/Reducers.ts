@@ -11,6 +11,7 @@ import {
   mergeParticipantsPreservingOrder,
   hasParticipantMembershipChanged,
 } from '@/utils/group-participants';
+import { updateReplyMessageList } from '@/utils/thread-message';
 
 export interface AppState {
   // auth
@@ -660,6 +661,17 @@ const reducers = (state: AppState, action: Action): AppState => {
             const messageId = msg?.id ?? msg?.message_id;
             return messageId !== removedMessageId;
           }),
+        };
+      }
+
+      if (action.payload.updatedMessage && action.payload.updatedMessageId) {
+        return {
+          ...state,
+          replyChat: updateReplyMessageList(
+            state.replyChat,
+            action.payload.updatedMessageId,
+            action.payload.updatedMessage,
+          ),
         };
       }
 

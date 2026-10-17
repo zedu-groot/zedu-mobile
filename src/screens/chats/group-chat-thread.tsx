@@ -11,17 +11,20 @@ import { useTyping } from '@/hooks/useTyping';
 import { MediaPickerSheet } from '@/components/layout/chat/media-picker';
 import MediaEditorModal from '@/components/layout/chat/media-editor';
 import ThreadItem from '@/components/layout/channels/thread-item';
-import { Channel } from '@/types/channel';
+import { ChannelChat } from '@/types/channel';
 import { useDataContext } from '@/store/useDataContext';
 import UseReplyChat from '@/services/channels/use-reply';
 import { ACTIONS } from '@/store/types';
-import { PostRequest } from '@/utils/requests';
+import { PostRequest, PutRequest } from '@/utils/requests';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import ReplyConnection from '@/centrifugoo/reply-connection';
 import ThreadMessageItem from '@/components/layout/channels/thread-message-item';
 import ChatBackground from '@/components/layout/chat/chat-background';
 import {
   getThreadMessageCallbackAction,
+  getReplyMessageId,
+  getThreadMessageEditUrl,
+  getThreadReplyEditPayload,
   getThreadMessageSendUrl,
 } from '@/utils/thread-message';
 import { ReplyMessageAction } from '@/components/layout/chat/reply-message-action';
@@ -31,6 +34,7 @@ import MentionUserBottomSheet, {
   MentionUserBottomSheetRef,
 } from '@/components/layout/chat/mention-user-bottomsheet';
 import ThreadScreenHeader from '@/components/layout/chat/thread-screen-header';
+import { getPlainMessageText } from '@/utils/message-text';
 
 const GroupChatThreadScreen = ({ navigation, route }: any) => {
   const { colors } = useTheme();
@@ -41,7 +45,8 @@ const GroupChatThreadScreen = ({ navigation, route }: any) => {
   const actionSheetRef = useRef<any>(null);
   const pickerSheetRef = useRef<any>(null);
   const mentionUserSheetRef = useRef<MentionUserBottomSheetRef>(null);
-  const [selectedMsg, setSelectedMsg] = useState<Channel | null>(null);
+  const [selectedMsg, setSelectedMsg] = useState<ChannelChat | null>(null);
+  const [editingReply, setEditingReply] = useState<ChannelChat | null>(null);
   const [pendingMedia, setPendingMedia] = useState<{
     uri: string;
     type: 'image' | 'file';
@@ -102,7 +107,54 @@ const GroupChatThreadScreen = ({ navigation, route }: any) => {
     pickerSheetRef.current?.expand();
   };
 
+  const handleSendEditReply = async (content: string) => {
+    if (!editingReply || !content.trim()) return;
+
+    const formattedContent = `<p>${content}</p>`;
+    const payload = getThreadReplyEditPayload(editingReply, formattedContent);
+    if (!payload) {
+      ShowNotify('Error', 'Unable to edit this reply');
+      return;
+    }
+
+    handleTyping(false);
+    const { error } = await PutRequest(
+      getThreadMessageEditUrl('group_dm', channel_id),
+      payload,
+    );
+
+    if (error) {
+      ShowNotify('Error', error);
+      return;
+    }
+
+    dispatch({
+      type: ACTIONS.REPLY_CHAT,
+      payload: {
+        updatedMessageId: payload.message_id,
+        updatedMessage: {
+          ...editingReply,
+          message: formattedContent,
+          edited: true,
+        },
+      },
+    });
+    dispatch({
+      type: getThreadMessageCallbackAction('group_dm'),
+      payload: !state.callback,
+    });
+    dispatch({ type: ACTIONS.MEDIA, payload: [] });
+    clearUploads();
+    setEditingReply(null);
+    setMessage('');
+  };
+
   const handleSendMessage = async (content: string, medias: any[] = []) => {
+    if (editingReply) {
+      await handleSendEditReply(content);
+      return;
+    }
+
     if (!content.trim() && medias.length === 0) return;
 
     handleTyping(false);
@@ -185,8 +237,22 @@ const GroupChatThreadScreen = ({ navigation, route }: any) => {
     setSelectedMsg(null);
   };
 
-  const handleLongPress = (item: Channel) => {
+  const handleLongPress = (item: ChannelChat) => {
     setSelectedMsg(item);
+  };
+
+  const handleEditReply = () => {
+    if (!selectedMsg) return;
+    if (!getReplyMessageId(selectedMsg) || !selectedMsg.thread_id) {
+      ShowNotify('Error', 'Unable to edit this reply');
+      return;
+    }
+
+    setEditingReply(selectedMsg);
+    setMessage(getPlainMessageText(selectedMsg.message || ''));
+    pickerSheetRef.current?.close();
+    actionSheetRef.current?.close();
+    setSelectedMsg(null);
   };
 
   const groupReferenceLabel =
@@ -264,6 +330,8 @@ const GroupChatThreadScreen = ({ navigation, route }: any) => {
           ref={actionSheetRef}
           item={selectedMsg}
           onClose={onClose}
+          handleEdit={handleEditReply}
+          threadChatType="group_dm"
         />
       )}
 
@@ -291,6 +359,7 @@ const GroupChatThreadScreen = ({ navigation, route }: any) => {
           setMessage={setMessage}
           onTypingChange={handleTyping}
           onSend={(content: any) => handleSendMessage(content)}
+          isEditing={Boolean(editingReply)}
           onVoiceRecorded={handleVoiceRecorded}
           onVoiceSendReady={handleVoiceSendReady}
           onVoiceCancel={handleVoiceCancel}

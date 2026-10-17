@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useMemo, useState } from 'react';
+import React, { forwardRef, useMemo, useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -6,7 +6,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Clipboard,
-  InteractionManager,
 } from 'react-native';
 import EmojiPicker, { EmojiType } from 'rn-emoji-keyboard';
 import { AppText } from '@/components/ui/text';
@@ -40,7 +39,7 @@ export const ReplyMessageAction = forwardRef<
   {
     item: any;
     onClose: () => void;
-    handleEdit?: () => void;
+    handleEdit: () => void;
     threadChatType?: ThreadChatType;
   }
 >(({ item, onClose, handleEdit, threadChatType = 'dm' }, ref) => {
@@ -63,17 +62,6 @@ export const ReplyMessageAction = forwardRef<
   const route = useRoute();
   const isOnThreadScreen = isOnReplyThreadScreen(route.name);
   const { state, dispatch } = useDataContext();
-  const itemKey = item?.id ?? item?.message_id ?? item?.thread_id;
-
-  useEffect(() => {
-    if (!itemKey) return;
-    const task = InteractionManager.runAfterInteractions(() => {
-      if (ref && typeof ref !== 'function') {
-        ref.current?.expand();
-      }
-    });
-    return () => task.cancel();
-  }, [itemKey, ref]);
 
   const handleEmoji = async (emoji: string) => {
     const messageId = item?.id ?? item?.message_id;
@@ -298,8 +286,11 @@ export const ReplyMessageAction = forwardRef<
         onClose={handleForwardClose}
       />
 
+      {/* Thread screens mount this only while a reply is selected, so open on
+          mount instead of waiting on InteractionManager, which may not fire. */}
       <AppBottomSheet
         ref={ref}
+        index={0}
         snapPoints={mode === 'delete' ? ['40%'] : ['65%']}
         paddingBottom={normalize(110)}
         onClose={() => {

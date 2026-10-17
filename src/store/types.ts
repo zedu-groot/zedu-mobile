@@ -383,6 +383,8 @@ interface ReplyChatAction {
   type: ACTIONS.REPLY_CHAT;
   payload: {
     newMessage?: any;
+    updatedMessage?: any;
+    updatedMessageId?: string;
     data?: any[];
     page?: number;
     removedMessageId?: string;

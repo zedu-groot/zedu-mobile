@@ -75,6 +75,7 @@ const ChatInput = ({
   highlightMentions = false,
   composerMentions = [],
   onTypingChange,
+  isEditing = false,
 }: any) => {
   const { colors } = useTheme();
   const styles = useMemo(() => createChatInputStyles(colors), [colors]);
@@ -389,7 +390,7 @@ const ChatInput = ({
     <View style={styles.inputAreaWrapper}>
       <TypingUsers />
       <View style={[styles.inputContainer]}>
-        {/* Left button — hidden while recording */}
+        {/* Left button — hidden while recording; no attachments while editing */}
         {!isVoiceRecording &&
           (isEmojiOpen ? (
             <TouchableOpacity style={styles.iconBtn} onPress={handleCloseEmoji}>
@@ -399,7 +400,7 @@ const ChatInput = ({
                 color={colors.iconDefault}
               />
             </TouchableOpacity>
-          ) : (
+          ) : isEditing ? null : (
             <TouchableOpacity
               style={styles.iconBtn}
               onPress={() => {
@@ -529,8 +530,8 @@ const ChatInput = ({
           </View>
         )}
 
-        {/* Right — camera + mic, or send button */}
-        {message.length === 0 ? (
+        {/* Right — camera + mic, or send button (always send while editing) */}
+        {message.length === 0 && !isEditing ? (
           <View style={styles.rightIcons}>
             {!isVoiceRecording && (
               <TouchableOpacity style={styles.iconBtn} onPress={onPickImage}>

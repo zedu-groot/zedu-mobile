@@ -46,6 +46,8 @@ interface Participant {
 }
 
 export interface ChannelChat {
+  id?: string;
+  message_id?: string;
   avatar_url: string;
   channel_name: string;
   channel_type: string;
