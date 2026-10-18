@@ -40,10 +40,18 @@ const parseJsonSafely = (value: unknown) => {
 export function resolveNotificationPayload(payload: any) {
   if (!payload) return null;
 
-  const additionalData = payload?.additionalData;
-  const customData = payload?.rawPayload?.custom?.a;
-  const alertBody = parseJsonSafely(payload?.body);
-  const apsBody = parseJsonSafely(payload?.rawPayload?.aps?.alert?.body);
+  const dataFromGetter =
+    typeof payload?.getData === 'function' ? payload.getData() : null;
+  const innerData = payload?._data || payload?.data || dataFromGetter;
+  const additionalData = payload?.additionalData || innerData?.additionalData;
+  const customData =
+    payload?.rawPayload?.custom?.a ||
+    innerData?.custom?.a ||
+    payload?.custom?.a;
+  const alertBody = parseJsonSafely(payload?.body || innerData?.body);
+  const apsBody = parseJsonSafely(
+    payload?.rawPayload?.aps?.alert?.body || innerData?.aps?.alert?.body,
+  );
 
   return {
     ...(apsBody && typeof apsBody === 'object' ? apsBody : {}),
@@ -52,6 +60,7 @@ export function resolveNotificationPayload(payload: any) {
     ...(additionalData && typeof additionalData === 'object'
       ? additionalData
       : {}),
+    ...(innerData && typeof innerData === 'object' ? innerData : {}),
     ...(typeof payload === 'object' ? payload : {}),
   };
 }

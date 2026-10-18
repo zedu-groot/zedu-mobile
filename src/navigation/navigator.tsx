@@ -50,9 +50,8 @@ import { retrieveMultipleData } from '@/utils/helper';
 import { useDataContext } from '@/store/useDataContext';
 import { ACTIONS } from '@/store/types';
 import { Platform, AppState, AppStateStatus } from 'react-native';
-import { OneSignal } from 'react-native-onesignal';
-import { ONESIGNAL_APP_ID } from '@env';
 import { ShowNotify } from '@/components/ui/toast';
+import { initPushNotifications } from '@/services/notification.service';
 import { BuzzStack, BuzzStackParamList } from './stacks/buzz';
 import { MentionStack, MentionStackParamList } from './stacks/mentions';
 import TabNavigator from './tab-navigator';
@@ -216,9 +215,6 @@ export const AppNavigator = ({ currentRoute }: AppNavigatorProps) => {
     isInitializedRef.current && hasTokenRef.current;
 
   useEffect(() => {
-    OneSignal.initialize(ONESIGNAL_APP_ID);
-    OneSignal.Notifications.requestPermission(true);
-
     const isDirectCallNotification = (notification: any) => {
       const payload =
         notification?.additionalData ||
@@ -507,7 +503,7 @@ export const AppNavigator = ({ currentRoute }: AppNavigatorProps) => {
         event.preventDefault();
         if (Platform.OS === 'ios') {
           console.warn(
-            '[OneSignal] direct call notification received on iOS — check VoIP Push logs separately',
+            '[PushNotification] direct call notification received on iOS — check VoIP Push logs separately',
           );
         } else {
           await processIncomingCallInvite(event?.notification);
@@ -526,14 +522,21 @@ export const AppNavigator = ({ currentRoute }: AppNavigatorProps) => {
         ShowNotify(event?.notification?.title as string, bodyText);
       }
 
-      event.getNotification().display();
+      event.getNotification?.()?.display?.();
     };
 
-    OneSignal.Notifications.addEventListener('click', onClickListener);
-    OneSignal.Notifications.addEventListener(
-      'foregroundWillDisplay',
-      onForegroundDisplayListener,
-    );
+    const unsubscribePush = initPushNotifications({
+      onNotificationClicked: notification => {
+        onClickListener({ notification });
+      },
+      onNotificationReceived: notification => {
+        onForegroundDisplayListener({
+          notification,
+          preventDefault: () => {},
+          getNotification: () => ({ display: () => {} }),
+        });
+      },
+    });
 
     let unsubscribeNativeIncomingCall: () => void = () => {};
     let unsubscribeNativeIncomingCallCancelled: () => void = () => {};
@@ -567,11 +570,7 @@ export const AppNavigator = ({ currentRoute }: AppNavigatorProps) => {
     }
 
     return () => {
-      OneSignal.Notifications.removeEventListener('click', onClickListener);
-      OneSignal.Notifications.removeEventListener(
-        'foregroundWillDisplay',
-        onForegroundDisplayListener,
-      );
+      unsubscribePush();
       unsubscribeNativeIncomingCall();
       unsubscribeNativeIncomingCallCancelled();
     };

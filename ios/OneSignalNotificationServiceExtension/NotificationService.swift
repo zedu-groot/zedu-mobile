@@ -1,5 +1,4 @@
 import UserNotifications
-import OneSignalExtension
 
 class NotificationService: UNNotificationServiceExtension {
     var contentHandler: ((UNNotificationContent) -> Void)?
@@ -16,7 +15,7 @@ class NotificationService: UNNotificationServiceExtension {
         }
 
         let userInfo = request.content.userInfo
-  if let additionalData = IncomingCallNSEHelper.extractAdditionalData(from: userInfo) {
+	if let additionalData = IncomingCallNSEHelper.extractAdditionalData(from: userInfo) {
             if IncomingCallNSEHelper.isDirectCallCancelledEvent(additionalData) {
                 let buzzId = IncomingCallNSEHelper.stringValue(additionalData["buzz_id"])
                 IncomingCallNSEHelper.clearLaunchStore()
@@ -72,16 +71,11 @@ class NotificationService: UNNotificationServiceExtension {
             }
         }
 
-        OneSignalExtension.didReceiveNotificationExtensionRequest(
-            self.receivedRequest,
-            with: bestAttemptContent,
-            withContentHandler: self.contentHandler
-        )
+        contentHandler(bestAttemptContent)
     }
 
     override func serviceExtensionTimeWillExpire() {
         if let contentHandler = contentHandler, let bestAttemptContent = bestAttemptContent {
-            OneSignalExtension.serviceExtensionTimeWillExpireRequest(self.receivedRequest, with: self.bestAttemptContent)
             contentHandler(bestAttemptContent)
         }
     }

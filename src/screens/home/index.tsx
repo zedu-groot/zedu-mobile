@@ -25,9 +25,11 @@ import { Chat } from '@/types/chats';
 import { ACTIONS } from '@/store/types';
 import UseGetOrg from '@/services/org/get-org';
 import GeneralNotificationConnection from '@/centrifugoo/general-notification-connection';
-import { OneSignal } from 'react-native-onesignal';
-import { ONESIGNAL_APP_ID } from '@env';
-import { PostRequest, PutRequest } from '@/utils/requests';
+import {
+  getStoredApnsToken,
+  syncPushTokenWithBackend,
+} from '@/services/notification.service';
+import { PostRequest } from '@/utils/requests';
 import { RootStackParamList } from '@/navigation/navigator';
 import { UserAvatarWithStatus } from '@/components/ui/user-avatar-with-status';
 import { formatPreviewMessage } from '@/utils/message-text';
@@ -56,14 +58,13 @@ const HomeScreen = () => {
   ];
 
   useEffect(() => {
-    const getData = async () => {
-      OneSignal.initialize(ONESIGNAL_APP_ID);
-      const deviceToken = await OneSignal.User.pushSubscription.getIdAsync();
-      const payload = { subscription_id: deviceToken };
-
-      await PutRequest('/users/onesignal-subscription-id', payload);
+    const syncToken = async () => {
+      const token = await getStoredApnsToken();
+      if (token) {
+        await syncPushTokenWithBackend(token);
+      }
     };
-    getData();
+    syncToken();
   }, []);
 
   const filteredDms = useMemo(() => {

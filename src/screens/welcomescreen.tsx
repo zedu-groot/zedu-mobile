@@ -7,8 +7,8 @@ import { normalize } from '../utils/normalize';
 import { useTheme } from '@/theme/ThemeProvider';
 import { createWelcomeScreenStyles } from '@/theme/createBuzzStyles';
 import { useNavigation } from '@react-navigation/native';
-import { OneSignal } from 'react-native-onesignal';
 import { requestAppPermissions } from '@/lib/permissions';
+import { requestNotificationPermissions } from '@/services/notification.service';
 import { CLIENT_URL } from '@env';
 
 const clientBaseUrl = (CLIENT_URL || 'https://zedu.chat').replace(/\/$/, '');
@@ -32,7 +32,7 @@ const WelcomeScreen: React.FC = () => {
       // Request camera + audio permissions immediately on welcome screen
       const granted = await requestAppPermissions();
       // Request notification permission
-      await OneSignal.Notifications.requestPermission(true);
+      await requestNotificationPermissions();
       if (granted) {
         setPermissionsGranted(true);
       } else {
